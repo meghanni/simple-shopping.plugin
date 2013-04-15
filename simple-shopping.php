@@ -2,7 +2,7 @@
 
 /*
    Plugin Name: Simple-Shopping Version 1.10
-   Plugin URI: http://megnicholas.co.uk
+   Plugin URI: http://megnicholas.co.uk/plugins
    Description: A plugin that provides a product database, product pages, order history and a simple shopping cart
    Version: 1.10
    Author: Meghan Nicholas
