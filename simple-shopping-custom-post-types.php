@@ -185,6 +185,8 @@ function product_price_box_content($post)
     foreach (Products::GetProduct($post->ID)->Prices as $key => $price) 
     {
         echo "<div>";
+        echo '<label for="type' . $key . '">Type</label>';
+        echo '<input type="text" name="type' . $key . '" value="' . $price->Type . '" size="10" />';
         echo '<label for="quantity' . $key . '">Quantity</label>';
         echo '<input type="text" name="quantity' . $key . '" value="' . $price->Quantity . '" size="5" />';
         echo '<label for="price' . $key . '">Price £</label>';
@@ -220,6 +222,7 @@ function product_price_box_save($post_id)
     {
         $price->Quantity = number_format(filter_var($_POST['quantity' . $key], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) , 0);
         $price->Price = number_format(filter_var($_POST['price' . $key], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) , 2);
+        $price->Type = filter_var($_POST['type' . $key], FILTER_SANITIZE_STRING);
     }
     $product->Prices = $newprices;
     

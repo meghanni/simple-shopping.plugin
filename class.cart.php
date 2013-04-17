@@ -178,23 +178,25 @@ class Cart
             {
             case 'add':
                 $cartLine = new CartLine();
-                $cartLine->ID = $_POST['ID'];
-                $product = Products::GetProduct($cartLine->ID);
-                $cartLine->Quantity = number_format(filter_var($_POST['Quantity'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION));
-
-                //find the price
+                $cartLine->ProductID = $_POST['ProductID'];
                 
-                foreach ($product->Prices as $price) 
-                {
-                    
-                    if ($price->Quantity == $cartLine->Quantity) $cartLine->Price = $price->Price;
-                }
+                //get the prices
+                $product = Products::GetProduct($cartLine->ProductID);
+                $prices = $product->Prices;
+                
+                //get the quantity, type and price
+                $cartLine->Quantity = $prices[$_POST['PriceID']]->Quantity;
+                $cartLine->Type = $prices[$_POST['PriceID']]->Type;
+                $cartLine->Price = $prices[$_POST['PriceID']]->Price;
+                $cartLine->PriceID = $_POST['PriceID'];
+
                 $this->Add($cartLine);
                 
                 break;
             case 'remove':
-                $id = $_POST['ID'];
-                $this->Remove($id);
+                $productID = $_POST['ProductID'];
+                $priceID = $_POST['PriceID'];
+                $this->Remove($productID,$priceID);
                 
                 break;
             case 'changeqty':
@@ -326,12 +328,12 @@ class Cart
 			<?php 
             if ($withLink) 
             { ?>
-				<td><a href="<?php echo the_permalink(); ?>"><?php echo $product->Title; ?></a></td>
+				<td><a href="<?php echo the_permalink(); ?>"><?php echo $cartLine->Type; ?> <?php echo $product->Title; ?></a></td>
 			<?php
             }
             else
             { ?>
-				<td><?php echo $product->Title; ?></td>
+				<td><?php echo $cartLine->Type; ?> <?php echo $product->Title; ?></td>
 			<?php
             } ?>
 
@@ -409,30 +411,45 @@ class Cart
     {
 
         //check that the product id exists
-        $product = Products::GetProduct($cartLine->ID);
+        $product = Products::GetProduct($cartLine->ProductID);
         
         if ($product == null) 
-        return;
+            return;
         
         if ($cartLine->Quantity == 0) 
-        return;
+            return;
         
-        if ($this->CartLines[$cartLine->ID] == null) 
+        foreach ($this->CartLines as $key => $line) {
+            if ( $line->ProductID == $cartLine->ProductID and $line->PriceID == $cartLine->PriceID) {
+                $thisKey = $key;
+            }
+        }
+        
+        if ( ! isset($thisKey) )
         {
-            $this->CartLines[$cartLine->ID] = $cartLine;
+            $this->CartLines[] = $cartLine;
         }
         else
         {
-            $this->CartLines[$cartLine->ID]->Quantity+= $cartLine->Quantity;
-            $this->CartLines[$cartLine->ID]->Price+= $cartLine->Price;
+            $this->CartLines[$thisKey]->Quantity+= $cartLine->Quantity;
+            $this->CartLines[$thisKey]->Price+= $cartLine->Price;
         }
         $this->SaveState($this);
     }
     
-    function Remove($id) 
+    function Remove($productID,$priceID)
     {
+        //search for line
+        foreach ($this->CartLines as $key => $line) {
+            if ( $line->ProductID == $productID && $line->PriceID == $priceID)
+                $thisKey = $key;            
+            
+        }
         
-        if ($this->CartLines[$id] != null) unset($this->CartLines[$id]);
+        //remove if it exists
+        if ( isset($thisKey) )
+            unset($this->CartLines[$thisKey]);
+        
         $this->SaveState($this);
     }
     
@@ -456,9 +473,11 @@ class Cart
 
 class CartLine
 {
-    var $ID;
+    var $ProductID;
+    var $PriceID;
     var $Quantity;
     var $Price;
+    var $Type;
     
     function LinePrice() 
     {
@@ -472,7 +491,8 @@ class CartLine
 ?>
 		<form style="display:inline;" class="removeitem" method="post">
 		<input type="hidden" name="cart_action" value="remove"></input>
-		<input type="hidden" name="ID" value="<?php echo $this->ID; ?>"></input>
+		<input type="hidden" name="ProductID" value="<?php echo $this->ProductID; ?>"></input>
+        <input type="hidden" name="PriceID" value="<?php echo $this->PriceID; ?>"></input>
 		<button title="Remove This" type="submit" class="btn btn-danger btn-mini">X</button>
 		</form>
 	<?php

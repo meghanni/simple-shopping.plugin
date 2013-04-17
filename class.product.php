@@ -3,10 +3,12 @@
 class Price {
  var $Quantity;
  var $Price;
+ var $Type;
  
- public function __construct($quantity, $price) {
+ public function __construct($quantity, $price, $type) {
  	$this->Quantity = $quantity;
  	$this->Price = $price;
+    $this->Type = $type;
  }
 }
 
@@ -31,6 +33,9 @@ class Product {
  			case 'Quantity': //only used when one price level is active
  				return $this->GetQuantity();
  				break;
+            case 'Type': //only used when one price level is active
+                return $this->GetType();
+                break;
  			
  			default:
  			return $this->$name;
@@ -56,14 +61,14 @@ class Product {
 	ob_start();
 	?>
 			<?php if ( $this->GetTotalPriceLevels() == 1 ) { ?>
-			<input type="hidden" name="Quantity" value="<?php echo $this->GetQuantity(); ?>" >
-			<p>Quantity: <strong><?php echo $this->GetQuantity(); ?></strong>  Price: <strong><?php echo PluginSettings::CurrencySymbol(); echo $this->GetPrice(); ?></strong></p>
+			<input type="hidden" name="PriceID" value="0" >
+			<p>Quantity: <strong><?php echo $this->GetQuantity(); ?> <?php echo $this->GetType(); ?> </strong>  Price: <strong><?php echo PluginSettings::CurrencySymbol(); echo $this->GetPrice(); ?></strong></p>
 			
 			<?php } else { ?>
-				<div><select name="Quantity">
-					<?php foreach ($this->GetPrices() as $price) {?>
+				<div><select name="PriceID">
+					<?php foreach ($this->GetPrices() as $key=>$price) {?>
 						<?php if (isset($price->Quantity) && isset($price->Price)) { ?>
-						<option value="<?php echo $price->Quantity; ?>"><?php echo $price->Quantity; ?> - <?php echo PluginSettings::CurrencySymbol(); echo $price->Price; ?></option>
+						<option value="<?php echo $key; ?>"> <?php echo $price->Quantity; ?> <?php echo $price->Type; ?> - <?php echo PluginSettings::CurrencySymbol(); echo $price->Price; ?></option>
 						<?php } ?>
 					<?php } ?>
 				</select></div>
@@ -81,17 +86,17 @@ class Product {
 	 ?>
 	 <?php $cart = new Cart();?>
 	 <form style="display:inline;" method="post">
-			<input type="hidden" id ="ID" name="ID" value="<?php echo $this->ID; ?>" >
-			
+			<input type="hidden" id ="ProductID" name="ProductID" value="<?php echo $this->ID; ?>" >
+
 			<?php echo $this->QuantityHtml(); ?>
 
 			<input type="hidden" id = "cart_action" name = "cart_action" value="add" >
 			<button class=".submit" type="submit" class="btn">Add To Cart</button>
 	</form>
 	<span>
-	<?php if ( isset($cart->CartLines[$this->ID] ) ) { ?>
+	<?php if ( isset($cart->CartLines[$this->ProductID] ) ) { ?>
 		( <?php echo  $cart->CartLines[$this->ID]->Quantity; ?> in Cart )	<?php } ?>
-	<?php if ( isset($cart->CartLines[$this->ID] ) ) { ?>
+	<?php if ( isset($cart->CartLines[$this->ProductID] ) ) { ?>
 		<?php echo $cart->CartLines[$this->ID]->RemoveHtml(); ?>
 	<?php } ?>
 	</span>
@@ -154,9 +159,9 @@ class Product {
 		$prices=array();
 		for ($x=0; $x < PluginSettings::NumberOfPriceLevels(); $x++) {
 			if (isset($value[$x]))
-				$prices[] = $value[$x];
+				$prices[$x] = $value[$x];
 			else
-				$prices[] = new Price(null,null);
+				$prices[$x] = new Price(null,null,null);
 
 		}
 
@@ -210,6 +215,16 @@ class Product {
 		foreach ($this->GetPrices() as $price)  {
 			if ( isset($price->Quantity) && isset($price->Price) )
 				return $price->Quantity;
+		}
+	}
+    
+    private function GetType() {
+		if ($this->GetTotalPriceLevels() > 1)
+			return null;
+
+		foreach ($this->GetPrices() as $price)  {
+			if ( isset($price->Quantity) && isset($price->Price) )
+				return $price->Type;
 		}
 	}	
 
