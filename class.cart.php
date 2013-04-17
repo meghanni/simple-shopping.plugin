@@ -321,7 +321,7 @@ class Cart
 		<?php 
         foreach ($this->CartLines as $cartLine) 
         { ?>
-			<?php $product = Products::GetProduct($cartLine->ID); ?>
+			<?php $product = Products::GetProduct($cartLine->ProductID); ?>
 			<tr>
 			<td><img width="100px" src=" <?php echo $product->ImageURL; ?> "/></td>
 
