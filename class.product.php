@@ -85,6 +85,7 @@ class Product {
 	ob_start();
 	 ?>
 	 <?php $cart = new Cart();?>
+            
 	 <form style="display:inline;" method="post">
 			<input type="hidden" id ="ProductID" name="ProductID" value="<?php echo $this->ID; ?>" >
 
@@ -93,14 +94,21 @@ class Product {
 			<input type="hidden" id = "cart_action" name = "cart_action" value="add" >
 			<button class=".submit" type="submit" class="btn">Add To Cart</button>
 	</form>
-	<span>
-	<?php if ( isset($cart->CartLines[$this->ProductID] ) ) { ?>
-		( <?php echo  $cart->CartLines[$this->ID]->Quantity; ?> in Cart )	<?php } ?>
-	<?php if ( isset($cart->CartLines[$this->ProductID] ) ) { ?>
-		<?php echo $cart->CartLines[$this->ID]->RemoveHtml(); ?>
-	<?php } ?>
-	</span>
+            
 
+    <?php 
+        foreach ($cart->CartLines as $line) {
+            
+            if ($line->ProductID == $this->ID) { 
+                ?><div style="margin-top:10px;"><?php
+                echo $line->Quantity . " " . $line->Type . " in Cart ";
+                echo $line->RemoveHtml();
+                ?></div><?php
+            }
+        }
+    
+    ?>
+	
 	 <?php
 	  $string=ob_get_contents();
 	  ob_end_clean();
