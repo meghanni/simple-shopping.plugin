@@ -323,7 +323,7 @@ class Cart
         { ?>
 			<?php $product = Products::GetProduct($cartLine->ProductID); ?>
 			<tr>
-			<td><img width="100px" src=" <?php echo $product->ImageURL; ?> "/></td>
+			<td width="100px"><img src="<?php echo $product->ImageURL; ?>"/></td>
 
 			<?php 
             if ($withLink) 
