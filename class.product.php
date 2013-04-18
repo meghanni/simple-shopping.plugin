@@ -20,6 +20,10 @@ class Product {
  private $Quantity;
  private $Prices;
  private $ImageURL;
+ private $ImageLinkThumb;
+ private $ImageLinkMedium;
+ private $ImageLinkLarge;
+ private $ImageLinkFull;
  
  	public function __get($name) {
  		switch ($name) {
@@ -36,7 +40,22 @@ class Product {
             case 'Type': //only used when one price level is active
                 return $this->GetType();
                 break;
- 			
+            case 'ImageURL':
+                return $this->GetImageUrl();
+                break;
+            case 'ImageLinkThumb':
+                return $this->GetImageLink('thumb');
+                break;
+            case 'ImageLinkMedium':
+                return $this->GetImageLink('medium');
+                break;
+            case 'ImageLinkLarge':
+                return $this->GetImageLink('large');
+                break;
+            case 'ImageLinkFull':
+                return $this->GetImageLink('full');
+                break;
+
  			default:
  			return $this->$name;
  		}
@@ -52,9 +71,6 @@ class Product {
  			default:
  			$this->$name = $value;
  		}	
-		
-
-		
 	}
 	
 	function QuantityHtml() {
@@ -155,7 +171,9 @@ class Product {
 		<h4><a href="<?php  echo get_permalink($this->ID); ?>"><?php echo $this->Title; ?></a></h4>
 		<?php } ?>
 		<div class="ssccart"><?php echo $this->AddToCartHtml(); ?></div>
-		<div style="margin-top:10px;height:180px;"><img  width="200px" src=" <?php echo $this->ImageURL; ?> "/></div>
+		<div style="margin-top:10px;height:180px;">
+            <?php echo $this->GetImageLink('thumb') ?>
+        </div>
 		<p><?php echo $this->Description; ?></p>	
 	<?php
 	return;
@@ -234,8 +252,40 @@ class Product {
 			if ( isset($price->Quantity) && isset($price->Price) )
 				return $price->Type;
 		}
-	}	
+	}
+    
+    private function GetImageUrl() {
+        //first check for a featured post
+        $post_thumbnail_id = get_post_thumbnail_id($this->ID);
 
+        if ( $post_thumbnail_id != null ) {
+          return wp_get_attachment_url($post_thumbnail_id);  
+        }
+        else {
+
+            $attachments = get_children( array('post_parent' => $this->ID, 'post_type' => 'attachment', 'post_mime_type' =>'image') );
+            foreach ( $attachments as $attachment_id => $attachment )
+                return wp_get_attachment_url($attachment_id);
+        }
+
+    }
+    
+    private function GetImageLink($size) {
+        //first check for a featured post
+        $post_thumbnail_id = get_post_thumbnail_id($this->ID);
+
+        if ( $post_thumbnail_id != null ) {
+          return wp_get_attachment_link( $post_thumbnail_id, 'thumbnail',0);
+        }
+        else {
+
+            $attachments = get_children( array('post_parent' => $this->ID, 'post_type' => 'attachment', 'post_mime_type' =>'image') );
+            foreach ( $attachments as $attachment_id => $attachment )
+                return wp_get_attachment_link($attachment_id, $size,0);
+        }   
+    }
+    
+    
 }
 
 class Products {
@@ -256,7 +306,7 @@ static function GetAll() {
 			$product->Title = get_the_title();
 			$product->Description = get_the_content();
 			//$product->Prices = $product->GetPrices());
-			$product->ImageURL = self::GetImageForPost($product->ID);
+			//$product->ImageURL = self::GetImageForPost($product->ID);
 
 			$prods[] = $product;
 
@@ -278,7 +328,7 @@ static function GetProduct($id) {
 			$product->Title = get_the_title();
 			$product->Description = get_the_content();
 			//$product->Prices = $product->GetPrices());
-			$product->ImageURL = self::GetImageForPost($product->ID);
+			//$product->ImageURL = self::GetImageForPost($product->ID);
 			
                    
 		endwhile;
@@ -292,6 +342,22 @@ static function GetImageForPost($id) {
     
     if ( $post_thumbnail_id != null ) {
       return wp_get_attachment_url($post_thumbnail_id);  
+    }
+    else {
+    
+	    $attachments = get_children( array('post_parent' => $id, 'post_type' => 'attachment', 'post_mime_type' =>'image') );
+	    foreach ( $attachments as $attachment_id => $attachment )
+		    return wp_get_attachment_url($attachment_id);
+	}
+
+}
+
+static function GetImageLinkForPost($id) {
+    //first check for a featured post
+    $post_thumbnail_id = get_post_thumbnail_id( $id );
+    
+    if ( $post_thumbnail_id != null ) {
+      return wp_get_attachment_link( post_thumbnail_id, $size, $permalink, $icon, $text ); 
     }
     else {
     
