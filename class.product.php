@@ -25,6 +25,12 @@ class Product {
  private $ImageLinkLarge;
  private $ImageLinkFull;
  
+ public function __construct() {
+     $url = urlencode(admin_url() . '/admin-ajax.php');
+     wp_register_script( 'addtocart', SCC_PLUGIN_URL . "/js/addtocart.php?adminurl=$url", 'jquery', "1.00", true );
+ }
+ 
+ 
  	public function __get($name) {
  		switch ($name) {
  		
@@ -74,109 +80,44 @@ class Product {
 	}
 	
 	function QuantityHtml() {
-	ob_start();
-	?>
-			<?php if ( $this->GetTotalPriceLevels() == 1 ) { ?>
-			<input type="hidden" name="PriceID" value="0" >
-			<p>Quantity: <strong><?php echo $this->GetQuantity(); ?> <?php echo $this->GetType(); ?> </strong>  Price: <strong><?php echo PluginSettings::CurrencySymbol(); echo $this->GetPrice(); ?></strong></p>
-			
-			<?php } else { ?>
-				<div><select name="PriceID">
-					<?php foreach ($this->GetPrices() as $key=>$price) {?>
-						<?php if (isset($price->Quantity) && isset($price->Price)) { ?>
-						<option value="<?php echo $key; ?>"> <?php echo $price->Quantity; ?> <?php echo $price->Type; ?> - <?php echo PluginSettings::CurrencySymbol(); echo $price->Price; ?></option>
-						<?php } ?>
-					<?php } ?>
-				</select></div>
-				
-			<?php } ?>	
-	
-	<?php
-	$string=ob_get_contents();
-	ob_end_clean();
-	return $string; 	
+        if ( $this->GetTotalPriceLevels() == 1 ) {
+            $view = new SSC_View('product.quantity.single');
+            $view->Set('quantity', $this->GetQuantity());
+            $view->Set('type', $this->GetType());
+            $view->Set('price', $this->GetPrice());
+        }
+        else {
+            $view = new SSC_View('product.quantity.list');
+            $view->Set('prices', $this->GetPrices());
+        }
+        $view->Set('currencySymbol', PluginSettings::CurrencySymbol());
+        return $view->Render();
+
 	}
  
 	function AddToCartHtml() {
-	ob_start();
-	 ?>
-	 <?php $cart = new Cart();?>
-            
-	 <form style="display:inline;" method="post">
-			<input type="hidden" id ="ProductID" name="ProductID" value="<?php echo $this->ID; ?>" >
-
-			<?php echo $this->QuantityHtml(); ?>
-
-			<input type="hidden" id = "cart_action" name = "cart_action" value="add" >
-			<button class=".submit" type="submit" class="btn">Add To Cart</button>
-	</form>
-            
-
-    <?php 
-        foreach ($cart->CartLines as $line) {
-            
-            if ($line->ProductID == $this->ID) { 
-                ?><div style="margin-top:10px;"><?php
-                echo $line->Quantity . " " . $line->Type . " in Cart ";
-                echo $line->RemoveHtml();
-                ?></div><?php
-            }
-        }
-    
-    ?>
-	
-	 <?php
-	  $string=ob_get_contents();
-	  ob_end_clean();
-	  return $string; 	 
+        $cart = new Cart();
+        
+        $view = new SSC_View('product.addtocart');
+        $view->Set('product', $this);
+        $view->Set('cart', $cart);
+        return $view->Render();
+	 
 	}
 	
 	//add this once to the product page to enable ajax on add to cart button
 	static function AddToCartScript() {
-	 ?>
- <script>
- //$('document').on('click', '.submit', function(){
-  jQuery('.ssccart>form').submit(function() {
-  		$ele = this;
-
-		jQuery.ajax({
-			type : "post",
-			dataType : "json",
-			cache: false,
-			url : "<?php echo admin_url( 'admin-ajax.php' ); ?>",
-			data : jQuery($ele).serialize() + "&action=ssc_cart", 
-			success: function(response,strText) {
-													jQuery($ele).parent().html(response.addtocart);
-													jQuery('.cart-menu').html(response.cartmenu);
-															  },
-			error: function(){
-							 alert('failure');
-						  }													
-															  
-		});  
-
-  return false;
-});
-</script> 
-	 <?php
+        wp_enqueue_script('addtocart');
 	}
 	
 	//output html for just this product
-	function Html ($detail=false) {
-	
-	?>
-		<? if ( $detail == true) { ?>
-		<h3><a href="<?php  echo get_permalink($this->ID); ?>"><?php echo $this->Title; ?></a></h3>
-		<?php } else { ?> 
-		<h4><a href="<?php  echo get_permalink($this->ID); ?>"><?php echo $this->Title; ?></a></h4>
-		<?php } ?>
-		<div class="ssccart"><?php echo $this->AddToCartHtml(); ?></div>
-		<div style="margin-top:10px;height:180px;">
-            <?php echo $this->GetImageLink('thumb') ?>
-        </div>
-		<p><?php echo $this->Description; ?></p>	
-	<?php
-	return;
+    function Html ($detail=false) {
+        if ( $detail == true)
+            $view = new SSC_View('product.detail');
+        else
+            $view = new SSC_View('product');
+        $view->Set('product', $this);
+        return $view->Render();
 	}
 	
 	private function GetPrices() {
@@ -270,7 +211,7 @@ class Product {
 
     }
     
-    private function GetImageLink($size) {
+    public function GetImageLink($size) {
         //first check for a featured post
         $post_thumbnail_id = get_post_thumbnail_id($this->ID);
 
@@ -305,13 +246,8 @@ static function GetAll() {
 			$product->ID = get_the_id();
 			$product->Title = get_the_title();
 			$product->Description = get_the_content();
-			//$product->Prices = $product->GetPrices());
-			//$product->ImageURL = self::GetImageForPost($product->ID);
-
 			$prods[] = $product;
-
-
-				                      
+	                      
 		endwhile;
 		
 	 return $prods;
@@ -327,10 +263,6 @@ static function GetProduct($id) {
 			$product->ID = get_the_id();
 			$product->Title = get_the_title();
 			$product->Description = get_the_content();
-			//$product->Prices = $product->GetPrices());
-			//$product->ImageURL = self::GetImageForPost($product->ID);
-			
-                   
 		endwhile;
 
 	 return $product;
@@ -370,4 +302,3 @@ static function GetImageLinkForPost($id) {
 
 
 }
-?>

@@ -13,16 +13,28 @@ include ('simple-shopping-custom-post-types.php');
 include ('shortcodes/product-list.php');
 include ('shortcodes/cart.php');
 include ('shortcodes/cart-menu.php');
-include ('shortcodes/cart-orderdetails.php');
-include ('shortcodes/cart-confirmandplace.php');
+//include ('shortcodes/cart-orderdetails.php');
+//include ('shortcodes/cart-confirmandplace.php');
 include ('class.product.php');
 include ('class.cart.php');
 include ('class.pluginsettings.php');
+include ('class.view.php');
 include ('simple-shopping-settings.php');
 include ('ajax.php');
 
-//this is only for testing remove after
-include ('shortcodes/product-test.php');
+if (!defined('SCC_THEME_DIR')) define('SCC_THEME_DIR', ABSPATH . 'wp-content/themes/' . get_template());
+
+if (!defined('SCC_PLUGIN_NAME')) define('SCC_PLUGIN_NAME', 'simple-shopping');
+
+if (!defined('SCC_PLUGIN_DIR')) define('SCC_PLUGIN_DIR', WP_PLUGIN_DIR . '/' . SCC_PLUGIN_NAME);
+
+if (!defined('SCC_PLUGIN_URL')) define('SCC_PLUGIN_URL', WP_PLUGIN_URL . '/' . SCC_PLUGIN_NAME);
+
+if (!defined('SCC_VERSION_KEY')) define('SCC_VERSION_KEY', 'cff_version');
+
+if (!defined('SCC_VERSION_NUM')) define('SCC_VERSION_NUM', '1.10');
+
+if (!defined('SCC_OPTIONS_KEY')) define('SCC_OPTIONS_KEY', 'cff_options');
 
 /*
 Create the products custom type

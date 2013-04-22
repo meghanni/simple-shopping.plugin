@@ -1,35 +1,77 @@
-<?php add_shortcode('cart','CartList'); 
+<?php add_shortcode('cart', 'CartList');
+
 /*
-Lists all the products neatly with add to cart buttons
+Shows the cart and then takes the customer through to checkout
 */
-function CartList() {
-?>
-	
-	<?php $cart = new Cart(); ?>
-	
-	<?php if ($cart->TotalLines() == 0) { ?>
-		<p>Your cart is currently empty.</p>
-	<?php } else { ?>
 
-		<div class="pull-right">
-			<form method="post">
-				<input type="hidden" name="cart_action" value="emptycart"></input>
-				<button title="Empty Cart" type="submit" class="btn btn-danger btn-mini">Empty Cart</button>
-			</form>
-		</div>			
-		
-		</p>You have <?php echo $cart->TotalLines(); ?> item(s) in your cart.</p>
-		
-		
-		<?php echo $cart->CartLinesHtml(true, true, true); ?>
-
-		<form action="/order-details">
-		<button type="submit" class="btn btn-large">Proceed With This Order</button>
-		</form>
-	
-	<?php } ?>
-	
-<?php
+function CartList() 
+{
+    $cart = new Cart();
+    $action = isset($_POST['c_action']) ? $_POST['c_action'] : '';
+    
+    switch ($action) 
+    {
+    case 'orderdetails':
+        //$cart->IsValid();
+        $view = new SSC_View('cart.orderdetails');
+        $view->Set('cart', $cart);
+        $view->Set('action', 'confirm-and-place-order');
+        echo $view->Render();
+    break;
+    case 'confirm-and-place-order':
+        
+        if (!$cart->IsValid()) 
+        {
+            $view = new SSC_View('cart.orderdetails');
+            $view->Set('action', 'confirm-and-place-order');
+            $view->Set('cart', $cart);
+            echo $view->Render();
+        }
+        else
+        {
+            $view = new SSC_View('cart.confirmandplace');
+            $view->Set('cart', $cart);
+            $view->Set('tc', $tc);
+            $view->Set('companyName', PluginSettings::CompanyName());
+            $view->Set('action', 'sendorder');
+            echo $view->Render();
+        }
+    break;
+    case 'sendorder':
+        
+        if (!$cart->IsValid()) 
+        {
+            $view = new SSC_View('cart.orderdetails');
+            $view->Set('action', 'confirm-and-place-order');
+            $view->Set('cart', $cart);
+            echo $view->Render();
+        }
+        else
+        {
+            
+            if ($cart->SendOrder()) 
+            {
+                $view = new SSC_View('cart.sent');
+                $view->Set('companyName', PluginSettings::CompanyName());
+                echo $view->Render();
+            }
+        }
+    break;
+    default:
+        
+        if ($cart->TotalLines() == 0) 
+        {
+            $view = new SSC_View('cart.empty');
+            echo $view->Render();
+        }
+        else
+        {
+            $view = new SSC_View('cart.list');
+            $view->Set('totalLines', $cart->TotalLines());
+            $view->Set('cart', $cart);
+            $view->Set('action', 'orderdetails');
+            echo $view->Render();
+        }
+    break;
+    }
 }
-
-?>

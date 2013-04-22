@@ -13,8 +13,14 @@ function CartMaintenance() {
 	$product=Products::GetProduct($id);
 	
 	//return the new html for add to cart button and text, and the cart menu item
-	$result['addtocart']=$product->AddToCartHtml();
-	$result['cartmenu']=$cart->CartMenuHtml();
+    $view = new SSC_View('product.addtocart');
+    $view->Set('product', $product);
+    $view->Set('cart', $cart);
+	$result['addtocart']=$view->Render();;
+    
+    $view = new SSC_View('cart.menu');
+    $view->Set('totalLines', $cart->TotalLines());
+	$result['cartmenu']=$view->Render();
 	
 	echo json_encode($result);
 

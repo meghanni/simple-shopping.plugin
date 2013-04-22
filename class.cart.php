@@ -8,7 +8,7 @@ class Cart
     private $Address;
     private $Email;
     private $Tel;
-    private $Sent;
+    //private $Sent;
     private $ErrorMessage;
     private $CartLines;
     public 
@@ -21,14 +21,15 @@ class Cart
     function __set($name, $value) 
     {
         $this->$name = $value;
-        $this->SaveState($this);
+        $this->SaveState();
     }
     private 
-    function SaveState($cart) 
+    function SaveState() 
     {
             
         //set_transient( PluginSettings::PluginName(), $cart, PluginSettings::Expiration() );
-        $_SESSION[PluginSettings::CompanyName() ] = $cart;
+        $test=PluginSettings::CompanyName();
+        $_SESSION[PluginSettings::CompanyName() ] = $this;
     }
     private 
     function GetState() 
@@ -106,7 +107,6 @@ class Cart
     function __construct() 
     {
         $this->CartLines = array();
-        $this->Sent = false;
 
         //retrieve the cart from the database if it is there
         $cart = $this->GetState();
@@ -119,7 +119,6 @@ class Cart
             $this->Address = $cart->Address;
             $this->Email = $cart->Email;
             $this->Tel = $cart->Tel;
-            $this->Sent = $cart->Sent;
             $this->CartLines = $cart->CartLines;
         }
 
@@ -170,7 +169,7 @@ class Cart
                 $this->Tel = filter_var($_POST['Tel'], FILTER_SANITIZE_NUMBER_INT);
                 unset($_POST['Tel']);
             }
-            $this->SaveState($this);
+            $this->SaveState();
             
             $action = isset($_POST['cart_action']) ? $_POST['cart_action'] : '';
             
@@ -214,14 +213,12 @@ class Cart
                 $this->ChangeQuantity($id, $quantity, $price);
                 
                 break;
+                
             case 'emptycart':
                 $this->EmptyCart();
                 
                 break;
-            case 'sendorder':
-                $this->SendOrder();
                 
-                break;
             }
             unset($_POST['cart_action']);
         }
@@ -231,7 +228,7 @@ class Cart
     {
         
         if (!$this->IsValid()) 
-        return;
+            return false;
 
         //prepare the content
         $postTitle = $this->Title . '  ' . $this->FirstName . ' ' . $this->LastName;
@@ -280,9 +277,8 @@ class Cart
         $message.= $postContent;
         wp_mail($this->Email, "Your Order With " . PluginSettings::CompanyName() , $message, $headers);
 
-        //update the sent flag and update state
-        $this->Sent = true;
-        $this->SaveState($this);
+        $this->SaveState();
+        return true;
     }
 
     /*
@@ -291,20 +287,9 @@ class Cart
     
     function CustomerHtml() 
     {
-        ob_start();
-?>
-
-		<table class="table table-condensed">
-		<tr><td>Name:</td><td><?php echo $this->Title . ' ' . $this->FirstName . ' ' . $this->LastName; ?></td></tr>
-		<tr><td>Delivery Address:</td><td><?php echo $this->Address; ?></td></tr>
-		<tr><td>Email:</td><td><?php echo $this->Email; ?></td></tr>
-		<tr><td>Telephone Number:</td><td><?php echo $this->Tel; ?></td></tr>
-		</table>
-		<?php
-        $html = ob_get_contents();
-        ob_end_clean();
-        
-        return $html;
+        $view = new SSC_View('cart.customer');
+        $view->Set('cart', $this);
+        return $view->Render();
     }
 
     /*
@@ -313,73 +298,12 @@ class Cart
     
     function CartLinesHtml($withLink = false, $withRemove = false, $withChangeQuantity = false) 
     {
-        ob_start();
-?>
-
-		<table class="table table-hover table-condensed table-striped" width="100%">
-		<tr><th colspan="2">Product Ordered</th><th>Qty</th><th colspan="2">Price</th></tr>
-		<?php 
-        foreach ($this->CartLines as $cartLine) 
-        { ?>
-			<?php $product = Products::GetProduct($cartLine->ProductID); ?>
-			<tr>
-			<td><?php echo $product->ImageLinkThumb; ?></td>
-
-			<?php 
-            if ($withLink) 
-            { ?>
-				<td><a href="<?php echo the_permalink(); ?>"><?php echo $cartLine->Type; ?> <?php echo $product->Title; ?></a></td>
-			<?php
-            }
-            else
-            { ?>
-				<td><?php echo $cartLine->Type; ?> <?php echo $product->Title; ?></td>
-			<?php
-            } ?>
-
-
-			<?php 
-            if ($withChangeQuantity) 
-            { ?>
-
-				<td><?php echo $cartLine->Quantity; ?></td>
-
-			<?php
-            }
-            else
-            { ?>
-			<td><?php echo $cartLine->Quantity; ?></td>
-			<?php
-            } ?>
-
-
-			<td><?php echo PluginSettings::CurrencySymbol(); ?> <?php echo $cartLine->LinePrice(); ?></td>
-
-			<?php 
-            if ($withRemove) 
-            { ?>
-					<td>
-					<?php echo $cartLine->RemoveHtml(); ?>
-					</td>
-			<?php
-            } ?>
-
-			</tr>
-		<?php
-        } ?>
-		<tr>
-		<td colspan="3"><h3>Total Price</h3></td>
-		<td><h3><?php echo PluginSettings::CurrencySymbol(); ?><?php echo $this->TotalPrice(); ?></h3></td>
-
-
-		</tr>
-		</table>
-
-		<?php
-        $html = ob_get_contents();
-        ob_end_clean();
-        
-        return $html;
+        $view = new SSC_View('cart.lines');
+        $view->Set('cart', $this);
+        $view->Set('withChangeQuantity', $withChangeQuantity);
+        $view->Set('withRemove',$withRemove);
+        $view->Set('currencySymbol',PluginSettings::CurrencySymbol());
+        return $view->Render();
     }
     
     function TotalPrice() 
@@ -397,8 +321,7 @@ class Cart
     function EmptyCart() 
     {
         $this->CartLines = array();
-        $this->Sent = false;
-        $this->SaveState($this);
+        $this->SaveState();
     }
     
     function TotalLines() 
@@ -434,7 +357,7 @@ class Cart
             $this->CartLines[$thisKey]->Quantity+= $cartLine->Quantity;
             $this->CartLines[$thisKey]->Price+= $cartLine->Price;
         }
-        $this->SaveState($this);
+        $this->SaveState();
     }
     
     function Remove($productID,$priceID)
@@ -450,7 +373,7 @@ class Cart
         if ( isset($thisKey) )
             unset($this->CartLines[$thisKey]);
         
-        $this->SaveState($this);
+        $this->SaveState();
     }
     
     function ChangeQuantity($id, $quantity, $price) 
@@ -461,13 +384,14 @@ class Cart
             $this->CartLines[$id]->Quantity = $quantity;
             $this->CartLines[$id]->Price = $price;
         }
-        $this->SaveState($this);
+        $this->SaveState();
     }
     
     function CartMenuHtml() 
     {
-        
-        return "Cart (" . $this->TotalLines() . " items)";
+        $view = new SSC_View('cart.menu');
+        $view->Set('totalLines', $this->TotalLines());
+        return $view->Render();
     }
 }
 
@@ -481,25 +405,14 @@ class CartLine
     
     function LinePrice() 
     {
-        
         return number_format($this->Price, 2);
     }
     public 
     function RemoveHtml() 
     {
-        ob_start();
-?>
-		<form style="display:inline;" class="removeitem" method="post">
-		<input type="hidden" name="cart_action" value="remove"></input>
-		<input type="hidden" name="ProductID" value="<?php echo $this->ProductID; ?>"></input>
-        <input type="hidden" name="PriceID" value="<?php echo $this->PriceID; ?>"></input>
-		<button title="Remove This" type="submit" class="btn btn-danger btn-mini">X</button>
-		</form>
-	<?php
-        $html = ob_get_contents();
-        ob_end_clean();
-        
-        return $html;
+        $view = new SSC_View('cartline.remove');
+        $view->Set('cartLine', $this);
+        return $view->Render();
     }
 }
 
