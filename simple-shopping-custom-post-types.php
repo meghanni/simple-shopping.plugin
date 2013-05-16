@@ -220,8 +220,12 @@ function product_price_box_save($post_id)
     
     foreach ($newprices as $key => & $price) 
     {
-        $price->Quantity = number_format(filter_var($_POST['quantity' . $key], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) , 0);
-        $price->Price = number_format(filter_var($_POST['price' . $key], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION) , 2);
+        $price->Quantity = number_format(floatval(filter_var($_POST['quantity' . $key], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION)) , 0);
+        if ( $price->Quantity == 0 ) unset($price->Quantity);
+        
+        $price->Price = number_format(floatval(filter_var($_POST['price' . $key], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION)) , 2);
+        if ( $price->Price == 0 ) unset($price->Price);
+        
         $price->Type = filter_var($_POST['type' . $key], FILTER_SANITIZE_STRING);
     }
     $product->Prices = $newprices;
