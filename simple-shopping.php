@@ -22,19 +22,19 @@ include ('class.view.php');
 include ('simple-shopping-settings.php');
 include ('ajax.php');
 
-if (!defined('SCC_THEME_DIR')) define('SCC_THEME_DIR', ABSPATH . 'wp-content/themes/' . get_template());
+if (!defined('SSC_THEME_DIR')) define('SSC_THEME_DIR', ABSPATH . 'wp-content/themes/' . get_template());
 
-if (!defined('SCC_PLUGIN_NAME')) define('SCC_PLUGIN_NAME', 'simple-shopping');
+if (!defined('SSC_PLUGIN_NAME')) define('SSC_PLUGIN_NAME', 'simple-shopping');
 
-if (!defined('SCC_PLUGIN_DIR')) define('SCC_PLUGIN_DIR', WP_PLUGIN_DIR . '/' . SCC_PLUGIN_NAME);
+if (!defined('SSC_PLUGIN_DIR')) define('SSC_PLUGIN_DIR', WP_PLUGIN_DIR . '/' . SSC_PLUGIN_NAME);
 
-if (!defined('SCC_PLUGIN_URL')) define('SCC_PLUGIN_URL', WP_PLUGIN_URL . '/' . SCC_PLUGIN_NAME);
+if (!defined('SSC_PLUGIN_URL')) define('SSC_PLUGIN_URL', WP_PLUGIN_URL . '/' . SSC_PLUGIN_NAME);
 
-if (!defined('SCC_VERSION_KEY')) define('SCC_VERSION_KEY', 'cff_version');
+if (!defined('SSC_VERSION_KEY')) define('SSC_VERSION_KEY', 'cff_version');
 
-if (!defined('SCC_VERSION_NUM')) define('SCC_VERSION_NUM', '1.10');
+if (!defined('SSC_VERSION_NUM')) define('SSC_VERSION_NUM', '1.10');
 
-if (!defined('SCC_OPTIONS_KEY')) define('SCC_OPTIONS_KEY', 'cff_options');
+if (!defined('SSC_OPTIONS_KEY')) define('SSC_OPTIONS_KEY', 'cff_options');
 
 /*
 Create the products custom type

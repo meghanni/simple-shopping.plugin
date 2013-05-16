@@ -16,15 +16,7 @@ class SSC_View
     public 
     function __construct($view) 
     {
-        
-        if (file_exists(SCC_PLUGIN_DIR . "/views/" . $view . ".view.php")) 
-        {
-            $this->view = SCC_PLUGIN_DIR . "/views/" . $view . ".view.php";
-        }
-        else
-        {
-            wp_die(__("View " . SCC_PLUGIN_URL . "/views/" . $view . ".view.php" . " not found"));
-        }
+        $this->view = SSC_PLUGIN_DIR . "/views/" . $view . ".view.php";
     }
     /**
      * set a variable which gets rendered in the view
@@ -42,7 +34,10 @@ class SSC_View
     {
         extract($this->vars, EXTR_SKIP);
         ob_start();
-        include $this->view;
+        if ( file_exists($this->view) )
+            include $this->view;
+        else
+            echo $this->view . " not found";
         
         return ob_get_clean();
     }
